@@ -1,0 +1,60 @@
+/* Falling Leaves Animation */
+.falling-leaves-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.leaf {
+  position: absolute;
+  top: -50px;
+  font-size: var(--size, 24px);
+  opacity: var(--opacity, 0.6);
+  animation: fall linear var(--duration, 10s) var(--delay, 0s) forwards;
+  transform: rotate(var(--rotation, 0deg));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+@keyframes fall {
+  0% {
+    top: -50px;
+    opacity: var(--opacity, 0.6);
+    transform: rotate(var(--rotation, 0deg)) translateX(0);
+  }
+
+  25% {
+    transform: rotate(calc(var(--rotation, 0deg) + 90deg)) translateX(100px);
+  }
+
+  50% {
+    transform: rotate(calc(var(--rotation, 0deg) + 180deg)) translateX(-80px);
+  }
+
+  75% {
+    transform: rotate(calc(var(--rotation, 0deg) + 270deg)) translateX(60px);
+  }
+
+  100% {
+    top: 100vh;
+    opacity: 0;
+    transform: rotate(calc(var(--rotation, 0deg) + 360deg)) translateX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .leaf {
+    font-size: calc(var(--size, 24px) * 0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .falling-leaves-container {
+    display: none;
+  }
+}
