@@ -4,6 +4,7 @@ const User = require("../models/UserModels");
 const Cart = require("../models/CartModels");
 const Product = require("../models/ProductModels"); // Import product model
 const { sendEmail } = require("../utils/Mailer");
+const { generateOrderReceiptPDF } = require("../utils/PDFGenerator");
 
 exports.checkout = async (req, res) => {
   try {
@@ -82,15 +83,23 @@ exports.checkout = async (req, res) => {
     cart.items = [];
     await cart.save();
 
-    // Send order confirmation email
+    // Send order confirmation email with PDF receipt
     try {
       const emailTemplate = createOrderConfirmationEmailTemplate(order, user);
+      
+      // Generate PDF receipt
+      const pdfPath = await generateOrderReceiptPDF(order, user);
+      
       await sendEmail({
         email: user.email,
         subject: `Order Confirmation - Order #${order._id}`,
         message: emailTemplate,
+        attachments: [{
+          filename: `Gardenia_Receipt_${order._id.toString().substring(0, 8)}.pdf`,
+          path: pdfPath
+        }]
       });
-      console.log(`📧 Order confirmation email sent to: ${user.email}`);
+      console.log(`📧 Order confirmation email with PDF receipt sent to: ${user.email}`);
     } catch (emailError) {
       console.error("❌ Failed to send order confirmation email:", emailError.message);
       // Don't fail the checkout if email fails

@@ -2,6 +2,7 @@
 const Order = require("../models/OrderModels");
 const User = require("../models/UserModels");
 const { sendEmail } = require("../utils/Mailer");
+const { generateOrderReceiptPDF } = require("../utils/PDFGenerator");
 
 // 🟢 Get all orders (Admin)
 exports.getAllOrders = async (req, res) => {
@@ -70,12 +71,23 @@ exports.updateOrderStatus = async (req, res) => {
     if (oldStatus !== status && order.user && order.user.email) {
       try {
         const emailTemplate = createOrderStatusEmailTemplate(order, status, oldStatus);
-        await sendEmail({
+        const emailOptions = {
           email: order.user.email,
           subject: `Order Status Update - Order #${order._id}`,
           message: emailTemplate,
-        });
-        console.log(`📧 Order status email sent to: ${order.user.email}`);
+        };
+
+        // Include PDF receipt when order is delivered
+        if (status === "Delivered") {
+          const pdfPath = await generateOrderReceiptPDF(order, order.user);
+          emailOptions.attachments = [{
+            filename: `Gardenia_Receipt_${order._id.toString().substring(0, 8)}.pdf`,
+            path: pdfPath
+          }];
+        }
+
+        await sendEmail(emailOptions);
+        console.log(`📧 Order status email ${status === "Delivered" ? 'with PDF receipt ' : ''}sent to: ${order.user.email}`);
       } catch (emailError) {
         console.error("❌ Failed to send order status email:", emailError.message);
         // Don't fail the entire request if email fails
