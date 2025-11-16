@@ -1275,3 +1275,196 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Social Login Styles */
+.form-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.social-login-buttons {
+  margin-bottom: 30px;
+}
+
+.social-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.social-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.social-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.google-btn {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+.google-btn:hover:not(:disabled) {
+  background-color: #f8faff;
+  border-color: #3367d6;
+}
+
+.facebook-btn {
+  border-color: #1877f2;
+  color: #1877f2;
+}
+
+.facebook-btn:hover:not(:disabled) {
+  background-color: #f0f4ff;
+  border-color: #166fe5;
+}
+
+.facebook-btn-alt {
+  border-color: #1877f2;
+  color: #1877f2;
+  background-color: #f8f9fa;
+  opacity: 0.8;
+}
+
+.facebook-btn-alt:hover:not(:disabled) {
+  background-color: #e7f3ff;
+  border-color: #166fe5;
+  opacity: 1;
+}
+
+.social-icon {
+  font-size: 18px;
+}
+
+.separator {
+  position: relative;
+  text-align: center;
+  margin: 30px 0;
+  color: #666;
+}
+
+.separator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
+  z-index: 1;
+}
+
+.separator span {
+  background: white;
+  padding: 0 15px;
+  position: relative;
+  z-index: 2;
+  font-size: 14px;
+}
+
+.form-container form input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s ease;
+  background-color: white;
+}
+
+.form-container form input:focus {
+  outline: none;
+  border-color: #2c7a4b;
+  box-shadow: 0 0 0 3px rgba(44, 122, 75, 0.1);
+}
+
+.form-container form button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  background-color: #2c7a4b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-container form button[type="submit"]:hover:not(:disabled) {
+  background-color: #226b3b;
+  transform: translateY(-1px);
+}
+
+.form-container form button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.login-links {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-links a {
+  color: #2c7a4b;
+  text-decoration: none;
+  font-weight: 500;
+  margin: 0 5px;
+}
+
+.login-links a:hover {
+  text-decoration: underline;
+}
+
+.login-links p {
+  margin-top: 15px;
+  color: #666;
+}
+
+/* Responsive styles */
+@media (max-width: 480px) {
+  .form-container {
+    margin: 20px;
+    padding: 30px 20px;
+  }
+  
+  .form-container h2 {
+    font-size: 1.5rem;
+  }
+  
+  .social-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}

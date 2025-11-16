@@ -1,0 +1,123 @@
+import {
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  FacebookAuthProvider
+} from 'firebase/auth';
+import { auth, googleProvider, facebookProvider } from '../config/firebase';
+import apiClient from '../config/axios';
+
+class FirebaseAuthService {
+  // Google login
+  async signInWithGoogle() {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Send user data to backend for registration/login
+      const response = await this.syncUserWithBackend(user, 'google');
+      return response;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      
+      // Provide more specific error messages
+      if (error.code === 'auth/configuration-not-found') {
+        throw new Error('Firebase configuration error. Please check your Firebase project setup and ensure OAuth providers are enabled.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Login popup was closed. Please try again.');
+      } else {
+        throw new Error(`Google login failed: ${error.message}`);
+      }
+    }
+  }
+
+  // Facebook login - standard behavior
+  async signInWithFacebook() {
+    try {
+      // Standard Facebook login - will show "Continue as [Your Name]"
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+      
+      // Send user data to backend for registration/login
+      const response = await this.syncUserWithBackend(user, 'facebook');
+      return response;
+    } catch (error) {
+      console.error('Facebook sign-in error:', error);
+      
+      // Provide more specific error messages
+      if (error.code === 'auth/configuration-not-found') {
+        throw new Error('Firebase configuration error. Please check your Firebase project setup and ensure OAuth providers are enabled.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Login popup was closed. Please try again.');
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('This email is already associated with a different login method.');
+      } else {
+        throw new Error(`Facebook login failed: ${error.message}`);
+      }
+    }
+  }
+
+  // Sync Firebase user with backend
+  async syncUserWithBackend(firebaseUser, provider) {
+    try {
+      const userData = {
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        uid: firebaseUser.uid,
+        photoURL: firebaseUser.photoURL,
+        provider: provider
+      };
+
+      // Send to backend for authentication
+      const response = await apiClient.post('/auth/social-login', userData);
+      
+      // Store backend token and user data
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Backend sync error:', error);
+      throw error;
+    }
+  }
+
+  // Sign out from Firebase only
+  async signOutFirebase() {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Firebase sign out error:', error);
+      throw error;
+    }
+  }
+
+  // Full sign out (Firebase + local storage)
+  async signOut() {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+  }
+
+
+  // Auth state listener
+  onAuthStateChange(callback) {
+    return onAuthStateChanged(auth, (user) => {
+      callback(user);
+    });
+  }
+
+  // Get current user
+  getCurrentUser() {
+    return auth.currentUser;
+  }
+}
+
+export default new FirebaseAuthService();

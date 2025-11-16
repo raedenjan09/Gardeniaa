@@ -203,6 +203,98 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+// ========== SOCIAL LOGIN ==========
+exports.socialLogin = async (req, res) => {
+try {
+  console.log('🔐 Social login attempt:', req.body);
+  const { name, email, uid, photoURL, provider } = req.body;
+
+  if (!email || !uid) {
+    return res.status(400).json({ message: 'Email and UID are required for social login' });
+  }
+
+  // Find user by email or create new user
+  let user = await User.findOne({ email });
+
+  if (user) {
+    // User exists - check if they're active and verified
+    if (user.isDeleted) {
+      console.log('🗑️ Deleted user attempted social login:', email);
+      return res.status(403).json({ message: 'Your account has been deleted. Please contact support.' });
+    }
+
+    if (!user.isActive) {
+      console.log('❌ Inactive user attempted social login:', email);
+      return res.status(403).json({ message: 'Your account is inactive. Please contact support.' });
+    }
+
+    // Update user profile with social login data if needed
+    if (!user.socialLoginIds) {
+      user.socialLoginIds = {};
+    }
+    user.socialLoginIds[provider] = uid;
+    
+    if (photoURL && !user.avatar?.url.includes('cloudinary')) {
+      user.avatar = {
+        public_id: `social_avatar_${Date.now()}`,
+        url: photoURL
+      };
+    }
+
+    await user.save();
+  } else {
+    // Create new user for social login
+    console.log('👤 Creating new user for social login:', email);
+    
+    const avatarData = {
+      public_id: `social_avatar_${Date.now()}`,
+      url: photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`
+    };
+
+    const userData = {
+      name,
+      email,
+      avatar: avatarData,
+      socialLoginIds: {
+        [provider]: uid
+      },
+      isVerified: true, // Social login users are automatically verified
+      isActive: true
+    };
+
+    user = await User.create(userData);
+    console.log('✅ New user created via social login:', email);
+  }
+
+  // Generate JWT token
+  const token = user.getJwtToken();
+
+  // Remove password from response
+  const userResponse = user.toObject();
+  delete userResponse.password;
+
+  console.log('✅ Social login successful for:', email);
+  res.status(200).json({
+    success: true,
+    token,
+    user: userResponse
+  });
+
+} catch (error) {
+  console.error('❌ SOCIAL LOGIN ERROR:', error);
+  
+  if (error.code === 11000) {
+    return res.status(400).json({ message: 'Email already exists with different login method' });
+  }
+
+  res.status(500).json({
+    success: false,
+    message: 'Social login failed. Please try again.',
+    error: error.message
+  });
+}
+};
+
 // ========== FORGOT PASSWORD ==========
 exports.forgotPassword = async (req, res) => {
   try {

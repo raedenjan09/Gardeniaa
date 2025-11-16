@@ -4,6 +4,7 @@ const {
   registerUser,
   verifyEmail,
   loginUser,
+  socialLogin,
   forgotPassword,
   resetPassword,
   getUserProfile,
@@ -19,6 +20,7 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.get('/verify-email/:token', verifyEmail);
 router.post('/login', loginUser);
+router.post('/auth/social-login', socialLogin);
 
 // PASSWORD
 router.post('/password/forgot', forgotPassword);

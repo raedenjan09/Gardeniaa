@@ -18,7 +18,10 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Please enter your password'],
+        required: function() {
+            // Password is only required for non-social login users
+            return !this.socialLoginIds || Object.keys(this.socialLoginIds).length === 0;
+        },
         minlength: [6, 'Your password must be longer than 6 characters'],
         select: false
     },
@@ -87,15 +90,20 @@ const userSchema = new mongoose.Schema({
     emailVerificationExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    socialLoginIds: {
+        type: Map,
+        of: String,
+        default: {}
+    },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
 
-// Encrypt password before saving user
+// Encrypt password before saving user (only if password exists)
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
+    if (!this.isModified('password') || !this.password) {
         return next();
     }
     this.password = await bcrypt.hash(this.password, 10);

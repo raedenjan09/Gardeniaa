@@ -61,11 +61,11 @@ const App = () => {
   const token = localStorage.getItem("token");
   const user = getUser();
 
-  const getDefaultRoute = () => {
+  const getDefaultRoute = React.useCallback(() => {
     if (!token) return "/login";
     if (user && user.role === "admin") return "/admin/dashboard";
     return "/home";
-  };
+  }, [token, user]);
 
   return (
     <Router>
