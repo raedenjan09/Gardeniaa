@@ -25,12 +25,12 @@ import "react-toastify/dist/ReactToastify.css";
 const BASE_URL = "http://localhost:4001/api/v1";
 
 const categories = [
-  "Idiophones",
-  "Membranophones",
-  "Chordophones",
-  "Aerophones",
-  "Electrophones",
-  "Keyboard Instruments",
+  "Indoor Plants",
+  "Outdoor Plants",
+  "Seeds",
+  "Soil & Fertilizers",
+  "Tools & Accessories",
+  "Planters & Pots",
 ];
 
 export default function UpdateProduct() {

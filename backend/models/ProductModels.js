@@ -38,12 +38,12 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Please select category for this product'],
         enum: {
             values: [
-                'Idiophones',
-                'Membranophones',
-                'Chordophones',
-                'Aerophones',
-                'Electrophones',
-                'Keyboard Instruments'
+                'Indoor Plants',
+                'Outdoor Plants',
+                'Seeds',
+                'Soil & Fertilizers',
+                'Tools & Accessories',
+                'Planters & Pots'
             ],
             message: 'Please select correct category for product'
         }

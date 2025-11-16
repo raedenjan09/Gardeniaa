@@ -3,6 +3,7 @@ const Order = require("../models/OrderModels");
 const User = require("../models/UserModels");
 const Cart = require("../models/CartModels");
 const Product = require("../models/ProductModels"); // Import product model
+const { sendEmail } = require("../utils/Mailer");
 
 exports.checkout = async (req, res) => {
   try {
@@ -81,10 +82,107 @@ exports.checkout = async (req, res) => {
     cart.items = [];
     await cart.save();
 
+    // Send order confirmation email
+    try {
+      const emailTemplate = createOrderConfirmationEmailTemplate(order, user);
+      await sendEmail({
+        email: user.email,
+        subject: `Order Confirmation - Order #${order._id}`,
+        message: emailTemplate,
+      });
+      console.log(`📧 Order confirmation email sent to: ${user.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send order confirmation email:", emailError.message);
+      // Don't fail the checkout if email fails
+    }
+
     res.status(201).json({ success: true, order });
   } catch (error) {
     console.error("Checkout error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
+};
+
+// Email template for order confirmation
+const createOrderConfirmationEmailTemplate = (order, user) => {
+  const orderId = order._id.toString().substring(0, 8);
+  const userName = user.name || 'Customer';
+  const orderDate = new Date(order.createdAt).toLocaleString();
+  const totalAmount = order.totalPrice.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 5px; }
+        .order-details { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .item-list { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .item-list th, .item-list td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .item-list th { background-color: #f2f2f2; }
+        .total { font-weight: bold; color: #4CAF50; font-size: 18px; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Order Confirmation</h1>
+        </div>
+        
+        <div class="content">
+          <p>Dear ${userName},</p>
+          <p>Thank you for your order! We're excited to let you know that we've received your order and it's being processed.</p>
+          
+          <div class="order-details">
+            <h3>Order Details</h3>
+            <p><strong>Order ID:</strong> #${orderId}</p>
+            <p><strong>Order Date:</strong> ${orderDate}</p>
+            <p><strong>Status:</strong> Processing</p>
+            
+            <h4>Order Items:</h4>
+            <table class="item-list">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order.orderItems.map(item => `
+                  <tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <p><strong>Subtotal:</strong> ${order.itemsPrice.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
+            <p><strong>Tax:</strong> ${order.taxPrice.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
+            <p><strong>Shipping:</strong> ${order.shippingPrice.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
+            <p class="total">Total: ${totalAmount}</p>
+          </div>
+          
+          <p>We'll send you another email when your order status changes. You can also check your order status in your account dashboard.</p>
+          
+          <p>Thank you for shopping with us!</p>
+          <p><strong>The Gardenia Team</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p>This is an automated message. Please do not reply to this email.</p>
+          <p>© ${new Date().getFullYear()} Gardenia. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 };
 
