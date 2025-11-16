@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { getUser, logout } from "../utils/helper";
 import Loader from "../layouts/Loader"; // ✅ import Loader
+import SalesCharts from "./SalesCharts"; // ✅ import SalesCharts
 
 const AdminDashboard = () => {
   const user = getUser();
@@ -120,6 +121,11 @@ const AdminDashboard = () => {
             Manage Reviews
           </Link>
         </div>
+      </div>
+
+      {/* Sales Charts Section */}
+      <div style={{ marginTop: "30px" }}>
+        <SalesCharts />
       </div>
     </div>
   );

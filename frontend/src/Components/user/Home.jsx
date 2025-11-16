@@ -15,6 +15,10 @@ const Home = () => {
   const [cartCount, setCartCount] = useState(0);
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minRating, setMinRating] = useState(0);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,7 +110,9 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAddToCart = async (productId) => {
+  const handleAddToCart = async (productId, e) => {
+    // Prevent the parent product-card onClick from firing
+    if (e && e.stopPropagation) e.stopPropagation();
     if (!token) {
       alert("Please log in to add products to your cart.");
       return;
@@ -125,8 +131,22 @@ const Home = () => {
     }
   };
 
-  const handleCheckoutSolo = (productId) => {
-    navigate(`/checkout/solo/${productId}`);
+  const handleCheckoutSolo = (productId, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    // Find the product object and pass it as a single-item cart to the checkout page
+    const product = products.find((p) => p._id === productId);
+    if (!product) {
+      alert("Product not found for checkout.");
+      return;
+    }
+
+    const cart = { items: [{ product, quantity: 1 }] };
+    navigate(`/checkout/solo/${productId}`, { state: { cart } });
+  };
+
+  const handleViewProduct = (productId) => {
+    navigate(`/product/${productId}`);
   };
 
   const handleLogout = () => {
@@ -248,10 +268,62 @@ const Home = () => {
           ) : products.length === 0 ? (
             <p>No products available at the moment.</p>
           ) : (
-            <div className="products-grid">
-              {products
-                .filter((product) => product.stock > 0)
-                .map((product) => {
+            <>
+              {/* Filters */}
+              <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600 }}>Category</label>
+                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                    <option value="">All</option>
+                    {[...new Set(products.map(p => p.category).filter(Boolean))].map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600 }}>Min Price</label>
+                  <input type="number" min={0} value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="0" />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600 }}>Max Price</label>
+                  <input type="number" min={0} value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Any" />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600 }}>Min Rating</label>
+                  <select value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
+                    <option value={0}>All</option>
+                    <option value={1}>1+</option>
+                    <option value={2}>2+</option>
+                    <option value={3}>3+</option>
+                    <option value={4}>4+</option>
+                    <option value={5}>5</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <button className="btn" onClick={() => { setMinPrice(''); setMaxPrice(''); setCategoryFilter(''); setMinRating(0); }}>Clear Filters</button>
+                </div>
+              </div>
+
+              <div className="products-grid">
+                {products
+                  .filter((product) => product.stock > 0)
+                  .filter((product) => (categoryFilter ? product.category === categoryFilter : true))
+                  .filter((product) => {
+                    if (minPrice === "" && maxPrice === "") return true;
+                    const price = Number(product.price || 0);
+                    if (minPrice !== "" && price < Number(minPrice)) return false;
+                    if (maxPrice !== "" && price > Number(maxPrice)) return false;
+                    return true;
+                  })
+                  .filter((product) => {
+                    if (!product.ratings && product.ratings !== 0) return true;
+                    return Number(product.ratings || 0) >= Number(minRating || 0);
+                  })
+                  .map((product) => {
                   const currentIndex = currentImageIndexes[product._id] || 0;
                   const totalImages = product.images?.length || 0;
                   const hasMultipleImages = totalImages > 1;
@@ -260,6 +332,7 @@ const Home = () => {
                     <div
                       key={product._id}
                       className="product-card"
+                                            onClick={() => handleViewProduct(product._id)}
                       style={{
                         display: "flex",
                         flexDirection: "column",
@@ -353,7 +426,7 @@ const Home = () => {
                         }}
                       >
                         <button
-                          onClick={() => handleAddToCart(product._id)}
+                          onClick={(e) => handleAddToCart(product._id, e)}
                           style={{
                             flex: 1,
                             display: "flex",
@@ -374,7 +447,7 @@ const Home = () => {
                         </button>
 
                         <button
-                          onClick={() => handleCheckoutSolo(product._id)}
+                          onClick={(e) => handleCheckoutSolo(product._id, e)}
                           style={{
                             flex: 1,
                             display: "flex",
@@ -398,6 +471,7 @@ const Home = () => {
                   );
                 })}
             </div>
+              </>
           )}
         </main>
         </>

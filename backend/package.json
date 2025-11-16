@@ -26,6 +26,7 @@
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
-    "validator": "^13.15.20"
+    "validator": "^13.15.20",
+    "bad-words": "^3.0.4"
   }
 }

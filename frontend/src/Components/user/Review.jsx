@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../../config/axios";
 import { Box, Typography, TextField, Button, Rating, CircularProgress } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
+import { getUser } from "../utils/helper";
 
 const Review = () => {
   const { productId } = useParams(); // Pass productId in route like /review/:productId
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -15,20 +17,28 @@ const Review = () => {
 
   // Fetch existing review if any
   useEffect(() => {
-    const fetchReview = async () => {
+    const fetchReviews = async () => {
       if (!token) {
         navigate("/login");
         return;
       }
 
       try {
-        const { data } = await axios.get(`http://localhost:4001/api/v1/reviews?productId=${productId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { data } = await apiClient.get(`/reviews/${productId}`);
+        const fetched = data.reviews || [];
+        setReviews(fetched);
 
-        const existingReview = data.reviews.find(
-          (rev) => rev.user._id === JSON.parse(atob(token.split(".")[1])).id
-        );
+        const currentUser = getUser();
+        const currentUserId = currentUser?.id || currentUser?._id;
+
+        const existingReview = fetched.find((rev) => {
+          // rev.user may be populated object or id string
+          const userField = rev.user;
+          if (!userField) return false;
+          if (typeof userField === 'string') return userField === currentUserId;
+          // populated object, try both _id and id
+          return (userField._id && userField._id.toString() === currentUserId) || (userField.id && userField.id.toString() === currentUserId);
+        });
 
         if (existingReview) {
           setRating(existingReview.rating);
@@ -36,13 +46,13 @@ const Review = () => {
           setIsEdit(true);
         }
       } catch (error) {
-        console.error("Failed to fetch review:", error);
+        console.error("Failed to fetch reviews:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReview();
+    fetchReviews();
   }, [productId, token, navigate]);
 
   const handleSubmit = async () => {
@@ -53,20 +63,18 @@ const Review = () => {
 
     setSubmitting(true);
     try {
-      const url = isEdit
-        ? "http://localhost:4001/api/v1/review/update"
-        : "http://localhost:4001/api/v1/review/create";
-
+      const url = isEdit ? "/review/update" : "/review/create";
       const method = isEdit ? "put" : "post";
 
-      await axios[method](
-        url,
-        { productId, rating, comment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient[method](url, { productId, rating, comment });
 
       alert(isEdit ? "Review updated successfully!" : "Review submitted successfully!");
-      navigate("/home"); // Redirect back to home or product page
+
+      // Refresh reviews
+      const { data } = await apiClient.get(`/reviews/${productId}`);
+      setReviews(data.reviews || []);
+
+      setIsEdit(true);
     } catch (error) {
       console.error("Failed to submit review:", error);
       alert(error.response?.data?.message || "Failed to submit review.");
@@ -83,10 +91,30 @@ const Review = () => {
     );
 
   return (
-    <Box p={3} maxWidth={600} mx="auto">
+    <Box p={3} maxWidth={800} mx="auto">
       <Typography variant="h4" mb={3}>
-        {isEdit ? "Edit Your Review" : "Write a Review"}
+        Reviews
       </Typography>
+
+      {/* Reviews list */}
+      <Box mb={3}>
+        {reviews.length === 0 ? (
+          <Typography>No reviews yet. Be the first to review!</Typography>
+        ) : (
+          reviews.map((rev) => (
+            <Box key={rev._id || rev.id} mb={2} p={2} borderRadius={2} boxShadow={1}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="subtitle1" fontWeight={600}>{rev.name || rev.user?.name || 'User'}</Typography>
+                <Rating value={Number(rev.rating)} readOnly />
+              </Box>
+              <Typography variant="body2" mt={1}>{rev.comment}</Typography>
+              <Typography variant="caption" color="textSecondary">{new Date(rev.createdAt).toLocaleString()}</Typography>
+            </Box>
+          ))
+        )}
+      </Box>
+
+      <Typography variant="h5" mb={2}>{isEdit ? "Edit Your Review" : "Write a Review"}</Typography>
 
       <Box display="flex" alignItems="center" mb={2}>
         <Typography variant="subtitle1" mr={2}>
@@ -109,7 +137,7 @@ const Review = () => {
         margin="normal"
       />
 
-      <Box mt={2}>
+      <Box mt={2} display="flex" gap={2}>
         <Button
           variant="contained"
           color="primary"
@@ -117,6 +145,12 @@ const Review = () => {
           disabled={submitting}
         >
           {submitting ? "Submitting..." : isEdit ? "Update Review" : "Submit Review"}
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => { setRating(0); setComment(''); setIsEdit(false); }}
+        >
+          Clear
         </Button>
       </Box>
     </Box>

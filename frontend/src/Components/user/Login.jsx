@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import apiClient from "../../config/axios";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -7,6 +7,25 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    // If user is already authenticated, redirect to appropriate page
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token) {
+      try {
+        const user = userStr ? JSON.parse(userStr) : null;
+        if (user && user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/home');
+        }
+      } catch (err) {
+        // fallback to home
+        navigate('/home');
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
