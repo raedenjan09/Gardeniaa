@@ -10,7 +10,7 @@ async function testEmail() {
     
     try {
         await sendEmail({
-            email: 'test@example.com',
+            email: 'sae2e2qemplew@example.com',
             subject: 'Test Email from Gardenia Order System',
             message: `
                 <h1>Test Email</h1>
