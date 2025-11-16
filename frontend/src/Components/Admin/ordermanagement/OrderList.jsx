@@ -17,6 +17,7 @@ export default function OrderList() {
   const [displayedOrders, setDisplayedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [updatingOrders, setUpdatingOrders] = useState({});
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -51,6 +52,9 @@ export default function OrderList() {
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
+    // Set loading state for this specific order
+    setUpdatingOrders(prev => ({ ...prev, [orderId]: true }));
+    
     try {
       await axios.put(
         `${BASE_URL}/admin/orders/${orderId}`,
@@ -67,6 +71,9 @@ export default function OrderList() {
       );
     } catch (err) {
       console.error("Failed to update order:", err);
+    } finally {
+      // Clear loading state
+      setUpdatingOrders(prev => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -133,11 +140,32 @@ export default function OrderList() {
         sort: false,
         customBodyRenderLite: (dataIndex) => {
           const order = displayedOrders[dataIndex];
+          const isUpdating = updatingOrders[order._id];
+          
           return (
             <FormControl size="small" fullWidth>
               <Select
                 value={order.orderStatus}
                 onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                disabled={isUpdating}
+                displayEmpty
+                renderValue={(selected) => (
+                  isUpdating ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid #f3f3f3',
+                        borderTop: '2px solid #4CAF50',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      <span>Updating...</span>
+                    </div>
+                  ) : (
+                    selected
+                  )
+                )}
               >
                 {statusOptions.map((status) => (
                   <MenuItem key={status} value={status}>
@@ -220,5 +248,48 @@ export default function OrderList() {
         </Button>
       </Box>
     </div>
+  );
+
+  // Add CSS for spinner animation
+  const spinnerStyle = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+
+  return (
+    <>
+      <style>{spinnerStyle}</style>
+      <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
+        <h2>Order Management</h2>
+
+        <Stack direction="row" spacing={2} mb={2} alignItems="center">
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              {statusOptions.map((status) => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+
+        <MUIDataTable.default data={displayedOrders} columns={columns} options={options} />
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+          <Button variant="contained" color="secondary" onClick={exportPDF}>
+            CSV
+          </Button>
+        </Box>
+      </div>
+    </>
   );
 }
