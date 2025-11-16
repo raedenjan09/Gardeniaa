@@ -35,7 +35,11 @@ const AdminSidebar = ({ user }) => {
       </div>
 
       {/* User Info */}
-      <div className="sidebar-user-info">
+      <div 
+        className="sidebar-user-info"
+        onClick={() => navigate('/admin/profile')}
+        style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+      >
         <div className="user-avatar">
           <img 
             src={user?.avatar?.url || '/images/default-avatar.png'} 
@@ -53,6 +57,15 @@ const AdminSidebar = ({ user }) => {
       {/* Navigation Menu */}
       <nav className="sidebar-nav">
         <ul className="nav-menu">
+          <li className="nav-item">
+            <Link
+              to="/admin/profile"
+              className={`nav-link ${isActiveRoute('/admin/profile') ? 'active' : ''}`}
+            >
+              <span className="nav-icon">👤</span>
+              <span className="nav-label">My Profile</span>
+            </Link>
+          </li>
           {menuItems.map((item) => (
             <li key={item.path} className="nav-item">
               <Link

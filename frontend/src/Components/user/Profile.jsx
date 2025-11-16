@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) return;
@@ -21,6 +23,10 @@ const Profile = () => {
 
     fetchProfile();
   }, [token]);
+
+  const handleViewOrders = () => {
+    navigate("/order-history");
+  };
 
   return (
     <div className="profile-container">
@@ -82,10 +88,28 @@ const Profile = () => {
               color: "#fff",
               borderRadius: "5px",
               textDecoration: "none",
+              marginRight: "10px",
             }}
           >
             Update Profile
           </a>
+
+          <button
+            onClick={handleViewOrders}
+            style={{
+              display: "inline-block",
+              marginTop: "15px",
+              padding: "8px 16px",
+              backgroundColor: "#28a745",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+          >
+            View Orders
+          </button>
         </div>
       ) : (
         <p>Loading profile...</p>

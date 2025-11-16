@@ -94,7 +94,7 @@ const CheckoutConfirmation = () => {
 
       if (res.data.success) {
         alert("Order placed successfully!");
-        navigate("/orders"); // redirect to orders page
+        navigate("/order-history"); // redirect to order history page
       } else {
         alert(res.data.message || "Checkout failed");
       }

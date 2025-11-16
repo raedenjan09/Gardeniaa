@@ -14,6 +14,7 @@ import Cart from "./Components/user/Cart";
 import OrderHistory from "./Components/user/OrderHistory";
 import Review from "./Components/user/Review";
 import CheckoutConfirmation from "./Components/user/CheckoutConfirmation";
+import ProductDetail from "./Components/user/ProductDetail";
 import AdminDashboard from "./Components/Admin/AdminDashboard";
 import AdminRoutes from "./Components/Admin/AdminRoutes";
 import { getUser } from "./Components/utils/helper";
@@ -41,6 +42,7 @@ import ViewOrder from "./Components/Admin/ordermanagement/ViewOrder";
 
 // Review Management (NEW)
 import ReviewList from "./Components/Admin/reviewmanagement/ReviewList";
+import AdminProfile from "./Components/Admin/AdminProfile";
 
 // Layout component that includes the header (for user routes)
 const Layout = ({ children }) => {
@@ -80,6 +82,8 @@ const App = () => {
         {/* User Protected Routes (with header) */}
         <Route path="/home" element={token ? <Layout><Home /></Layout> : <Navigate to="/login" />} />
         <Route path="/products" element={token ? <Layout><Home /></Layout> : <Navigate to="/login" />} />
+        <Route path="/product/:productId" element={token ? <Layout><ProductDetail /></Layout> : <Navigate to="/login" />} />
+        <Route path="/checkout/solo/:productId" element={token ? <Layout><CheckoutConfirmation /></Layout> : <Navigate to="/login" />} />
         <Route path="/profile" element={token ? <Layout><Profile /></Layout> : <Navigate to="/login" />} />
         <Route path="/update-profile" element={token ? <Layout><UpdateProfile /></Layout> : <Navigate to="/login" />} />
         <Route path="/cart" element={token ? <Layout><Cart /></Layout> : <Navigate to="/login" />} />
@@ -113,6 +117,9 @@ const App = () => {
 
         {/* Review Management (NEW) */}
         <Route path="/admin/reviews" element={<AdminRoutes><ReviewList /></AdminRoutes>} />
+
+        {/* Admin Profile */}
+        <Route path="/admin/profile" element={<AdminRoutes><AdminProfile /></AdminRoutes>} />
 
         {/* Catch-all Redirect */}
         <Route path="*" element={<Navigate to={getDefaultRoute()} />} />

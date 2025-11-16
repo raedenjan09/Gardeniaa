@@ -188,7 +188,7 @@ const Header = () => {
                         Cart
                       </Link>
                       <Link
-                        to="/orders"
+                        to="/order-history"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
