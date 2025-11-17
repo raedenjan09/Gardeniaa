@@ -24,9 +24,7 @@ const Profile = () => {
     fetchProfile();
   }, [token]);
 
-  const handleViewOrders = () => {
-    navigate("/order-history");
-  };
+  // View Orders functionality removed as per requirements
 
   return (
     <div className="profile-container">
@@ -94,22 +92,6 @@ const Profile = () => {
             Update Profile
           </a>
 
-          <button
-            onClick={handleViewOrders}
-            style={{
-              display: "inline-block",
-              marginTop: "15px",
-              padding: "8px 16px",
-              backgroundColor: "#28a745",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            View Orders
-          </button>
         </div>
       ) : (
         <p>Loading profile...</p>

@@ -3,13 +3,34 @@ import apiClient from "../../config/axios";
 import { useNavigate, Link } from "react-router-dom";
 import firebaseAuthService from "../../services/firebaseAuth";
 import { FaGoogle, FaFacebook } from "react-icons/fa";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+
+// Validation schema
+const loginSchema = yup.object({
+  email: yup
+    .string()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required")
+});
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm({
+    resolver: yupResolver(loginSchema)
+  });
 
   useEffect(() => {
     // If user is already authenticated, redirect to appropriate page
@@ -30,45 +51,27 @@ const Login = () => {
     }
   }, [navigate]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (data) => {
     setMessage(""); // Clear previous message
+    setLoading(true);
+    
     try {
-      const { data } = await apiClient.post("/login", { email, password });
-
-      // Store user data in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          id: data.user._id
-        })
-      );
-
+      // Use Firebase email/password authentication
+      const result = await firebaseAuthService.signInWithEmail(data.email, data.password);
       setMessage("Login successful!");
 
       // Redirect based on role
-      if (data.user.role === "admin") {
+      if (result.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // Normal users go to the site home
         navigate("/home");
       }
 
     } catch (error) {
-      const errorMsg = error.response?.data?.message || "Invalid credentials";
-
-      // Check for inactive user message
-      if (errorMsg.includes("inactive")) {
-        setMessage("Your account is inactive. Please contact support.");
-      } else if (errorMsg.includes("verify")) {
-        setMessage("Please verify your email before logging in.");
-      } else {
-        setMessage(errorMsg);
-      }
+      // Display error message from Firebase or backend
+      setMessage(error.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,23 +170,31 @@ const Login = () => {
       </div>
       
       {/* Regular Login Form */}
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+      <form onSubmit={handleSubmit(handleLogin)}>
+        <div>
+          <input
+            type="email"
+            placeholder="Email"
+            {...register("email")}
+            className={errors.email ? "input-error" : ""}
+          />
+          {errors.email && (
+            <span className="error-message">{errors.email.message}</span>
+          )}
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            {...register("password")}
+            className={errors.password ? "input-error" : ""}
+          />
+          {errors.password && (
+            <span className="error-message">{errors.password.message}</span>
+          )}
+        </div>
         <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Logging in..." : "Login with Firebase"}
         </button>
       </form>
       

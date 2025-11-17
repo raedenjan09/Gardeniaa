@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './Header.css';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import HistoryIcon from '@mui/icons-material/History';
 
 const Header = () => {
   const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cartItemsCount, setCartItemsCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,8 +18,27 @@ const Header = () => {
     const token = localStorage.getItem('token');
     if (token) {
       fetchUserProfile(token);
+      fetchCartItemsCount(token);
+    } else {
+      setUser(null); // Clear user if no token
+      setCartItemsCount(0);
     }
-  }, []);
+
+    // Listen for cart updates from other components
+    const handleCartUpdate = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetchCartItemsCount(token);
+      }
+    };
+
+    // Add event listener for cart updates
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, [location.pathname]); // Re-run when route changes (e.g., after login)
 
   const fetchUserProfile = async (token) => {
     try {
@@ -31,9 +53,23 @@ const Header = () => {
     }
   };
 
+  const fetchCartItemsCount = async (token) => {
+    try {
+      const { data } = await axios.get('http://localhost:4001/api/v1/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const totalItems = data.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      setCartItemsCount(totalItems);
+    } catch (error) {
+      console.error('Error fetching cart items count:', error);
+      setCartItemsCount(0);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setCartItemsCount(0);
     setIsDropdownOpen(false);
     navigate('/login');
   };
@@ -155,7 +191,30 @@ const Header = () => {
         {/* User Actions */}
         <div className="user-actions">
           {user ? (
-            <div className="user-menu">
+            <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {!isAdmin && (
+                <>
+                  <div className="cart-icon-wrapper" style={{ position: 'relative' }}>
+                    <Link
+                      to="/cart"
+                      className={`icon-link ${isActiveRoute('/cart') ? 'active' : ''}`}
+                      title="Shopping Cart"
+                    >
+                      <ShoppingCartIcon />
+                    </Link>
+                    {cartItemsCount > 0 && (
+                      <span className="cart-badge">{cartItemsCount}</span>
+                    )}
+                  </div>
+                  <Link
+                    to="/order-history"
+                    className={`icon-link ${isActiveRoute('/order-history') ? 'active' : ''}`}
+                    title="Order History"
+                  >
+                    <HistoryIcon />
+                  </Link>
+                </>
+              )}
               <div 
                 className="user-avatar"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -165,7 +224,7 @@ const Header = () => {
                   alt={user.name}
                   className="avatar-image"
                 />
-                <span className="user-name">{user.name}</span>
+                <span className="user-name">{user.name.split(' ')[0]}</span>
                 <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
               </div>
               
@@ -178,24 +237,6 @@ const Header = () => {
                   >
                     Profile
                   </Link>
-                  {!isAdmin && (
-                    <>
-                      <Link
-                        to="/cart"
-                        className="dropdown-item"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        Cart
-                      </Link>
-                      <Link
-                        to="/order-history"
-                        className="dropdown-item"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        Orders
-                      </Link>
-                    </>
-                  )}
                   {isAdmin && (
                     <Link
                       to="/admin"
@@ -267,6 +308,12 @@ const Header = () => {
             <div className="mobile-nav-links">
               <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
               <Link to="/products" onClick={() => setIsMobileMenuOpen(false)}>Products</Link>
+              {user && !isAdmin && (
+                <>
+                  <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>Cart</Link>
+                  <Link to="/order-history" onClick={() => setIsMobileMenuOpen(false)}>Orders</Link>
+                </>
+              )}
             </div>
           )}
           

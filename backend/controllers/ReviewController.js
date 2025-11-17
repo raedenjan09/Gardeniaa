@@ -1,4 +1,5 @@
 const Product = require("../models/ProductModels");
+const Order = require("../models/OrderModels");
 const Filter = require('bad-words');
 
 // Initialize filter with default bad words
@@ -31,7 +32,7 @@ customBadWords.forEach(word => {
 // Optional: Set custom replacement character (default is *)
 // filter.setPlaceHolder('*');  // or use other characters like '#', '&', etc.
 
-// Create a review (only if the user hasn't reviewed yet)
+// Create a review (only if the user hasn't reviewed yet and has received the product)
 exports.createReview = async (req, res) => {
   try {
     const { rating, comment, productId } = req.body;
@@ -44,6 +45,23 @@ exports.createReview = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ success: false, message: "Product not found." });
+
+    // Check if user has purchased and received this product
+    const userOrders = await Order.find({
+      user: userId,
+      orderStatus: "Delivered"
+    });
+    
+    const hasPurchasedAndReceived = userOrders.some(order =>
+      order.orderItems.some(item => item.product.toString() === productId)
+    );
+
+    if (!hasPurchasedAndReceived) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review products that you have purchased and received."
+      });
+    }
 
     // Check if user already reviewed
     const existingReview = product.reviews.find(
@@ -98,6 +116,23 @@ exports.updateReview = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ success: false, message: "Product not found." });
+
+    // Check if user has purchased and received this product
+    const userOrders = await Order.find({
+      user: userId,
+      orderStatus: "Delivered"
+    });
+    
+    const hasPurchasedAndReceived = userOrders.some(order =>
+      order.orderItems.some(item => item.product.toString() === productId)
+    );
+
+    if (!hasPurchasedAndReceived) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review products that you have purchased and received."
+      });
+    }
 
     const reviewIndex = product.reviews.findIndex(
       (rev) => rev.user.toString() === userId.toString()

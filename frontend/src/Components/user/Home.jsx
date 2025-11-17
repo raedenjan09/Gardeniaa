@@ -12,13 +12,18 @@ const Home = () => {
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [addingToCart, setAddingToCart] = useState({});
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
   const [currentSlide, setCurrentSlide] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minRating, setMinRating] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,19 +43,25 @@ const Home = () => {
           setCartCount(cartRes.data.cart?.items?.length || 0);
         }
 
+        // Reset pagination when search or filters change
+        setCurrentPage(1);
+        setProducts([]);
+        setHasMore(true);
+
         // Check for search query in URL
         const searchParams = new URLSearchParams(location.search);
         const searchQuery = searchParams.get('search');
         
         let productsRes;
         if (searchQuery) {
-          productsRes = await axios.get(`http://localhost:4001/api/v1/products/search?q=${encodeURIComponent(searchQuery)}`);
+          productsRes = await axios.get(`http://localhost:4001/api/v1/products/search?q=${encodeURIComponent(searchQuery)}&page=1&limit=12`);
         } else {
-          productsRes = await axios.get("http://localhost:4001/api/v1/products");
+          productsRes = await axios.get("http://localhost:4001/api/v1/products?page=1&limit=12");
         }
         
-        const productsData = productsRes.data.products || productsRes.data || [];
+        const productsData = productsRes.data.products || [];
         setProducts(productsData);
+        setTotalPages(productsRes.data.totalPages || 1);
 
         const initialIndexes = {};
         productsData.forEach((product) => {
@@ -68,6 +79,54 @@ const Home = () => {
 
     fetchData();
   }, [token, location.search]);
+
+  // Infinite scroll function
+  const fetchMoreProducts = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const searchParams = new URLSearchParams(location.search);
+      const searchQuery = searchParams.get('search');
+      
+      let productsRes;
+      if (searchQuery) {
+        productsRes = await axios.get(`http://localhost:4001/api/v1/products/search?q=${encodeURIComponent(searchQuery)}&page=${nextPage}&limit=12`);
+      } else {
+        productsRes = await axios.get(`http://localhost:4001/api/v1/products?page=${nextPage}&limit=12`);
+      }
+      
+      const newProducts = productsRes.data.products || [];
+      setProducts(prev => [...prev, ...newProducts]);
+      setCurrentPage(nextPage);
+      setHasMore(nextPage < (productsRes.data.totalPages || 1));
+
+      const newIndexes = { ...currentImageIndexes };
+      newProducts.forEach((product) => {
+        if (product.images && product.images.length > 0) {
+          newIndexes[product._id] = 0;
+        }
+      });
+      setCurrentImageIndexes(newIndexes);
+    } catch (error) {
+      console.error("Failed to fetch more products", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+        fetchMoreProducts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, hasMore, currentPage]);
 
   const nextImage = (productId, totalImages, e) => {
     e.stopPropagation();
@@ -115,6 +174,7 @@ const Home = () => {
     if (e && e.stopPropagation) e.stopPropagation();
     if (!token) {
       alert("Please log in to add products to your cart.");
+      navigate('/login');
       return;
     }
     try {
@@ -133,6 +193,12 @@ const Home = () => {
 
   const handleCheckoutSolo = (productId, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
+    
+    if (!token) {
+      alert("Please log in to checkout.");
+      navigate('/login');
+      return;
+    }
 
     // Find the product object and pass it as a single-item cart to the checkout page
     const product = products.find((p) => p._id === productId);
@@ -168,10 +234,8 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      {user && (
-        <>
-          {/* Farm Tools & Plants Banner Slideshow */}
-          <div className="slideshow-container">
+      {/* Farm Tools & Plants Banner Slideshow */}
+      <div className="slideshow-container">
             <div className={currentSlide === 0 ? "slide active" : "slide"}>
               <img src="/images/banner1.jpg" alt="Farm Tools Collection" className="slide-image" />
               <div className="slide-content">
@@ -253,13 +317,30 @@ const Home = () => {
             </div>
           </div>
 
-          <main className="products-section">
-            <h2>
-              {location.search.includes('search=')
-                ? `Search Results for "${new URLSearchParams(location.search).get('search')}"`
-                : 'Available Products'
-              }
-            </h2>
+      <main className="products-section">
+        <h2>
+          {location.search.includes('search=')
+            ? `Search Results for "${new URLSearchParams(location.search).get('search')}"`
+            : 'Available Products'
+          }
+        </h2>
+
+        {/* Welcome message for non-logged in users */}
+        {!user && (
+          <div style={{
+            background: '#f0f9eb',
+            border: '1px solid #b7eb8f',
+            borderRadius: '8px',
+            padding: '15px',
+            marginBottom: '20px',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ color: '#389e0d', margin: '0 0 10px 0' }}>Welcome to Gardenia!</h3>
+            <p style={{ margin: '0', color: '#555' }}>
+              Browse our products freely. Please <strong>log in or register</strong> to add items to cart and checkout.
+            </p>
+          </div>
+        )}
 
           {loadingProducts ? (
             <div className="loader-container">
@@ -425,57 +506,124 @@ const Home = () => {
                           justifyContent: "space-between",
                         }}
                       >
-                        <button
-                          onClick={(e) => handleAddToCart(product._id, e)}
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 5,
-                            padding: "8px 10px",
-                            backgroundColor: "#1976d2",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: 500,
-                            transition: "0.3s",
-                          }}
-                        >
-                          <ShoppingCartIcon fontSize="small" /> Add to Cart
-                        </button>
+                        {user ? (
+                          <>
+                            <button
+                              onClick={(e) => handleAddToCart(product._id, e)}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 5,
+                                padding: "8px 10px",
+                                backgroundColor: "#1976d2",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 500,
+                                transition: "0.3s",
+                              }}
+                            >
+                              <ShoppingCartIcon fontSize="small" /> Add to Cart
+                            </button>
 
-                        <button
-                          onClick={(e) => handleCheckoutSolo(product._id, e)}
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 5,
-                            padding: "8px 10px",
-                            backgroundColor: "#388e3c",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: 500,
-                            transition: "0.3s",
-                          }}
-                        >
-                          Checkout <ArrowForwardIcon fontSize="small" />
-                        </button>
+                            <button
+                              onClick={(e) => handleCheckoutSolo(product._id, e)}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 5,
+                                padding: "8px 10px",
+                                backgroundColor: "#388e3c",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 500,
+                                transition: "0.3s",
+                              }}
+                            >
+                              Checkout <ArrowForwardIcon fontSize="small" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/login');
+                              }}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 5,
+                                padding: "8px 10px",
+                                backgroundColor: "#f57c00",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 500,
+                                transition: "0.3s",
+                              }}
+                            >
+                              <ShoppingCartIcon fontSize="small" /> Add to cart
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/login');
+                              }}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 5,
+                                padding: "8px 10px",
+                                backgroundColor: "#ff9800",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 500,
+                                transition: "0.3s",
+                              }}
+                            >
+                              checkout <ArrowForwardIcon fontSize="small" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
                 })}
             </div>
+            
+            {/* Loading more indicator */}
+            {loadingMore && (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Loader />
+                <p>Loading more products...</p>
+              </div>
+            )}
+            
+            {/* End of products message */}
+            {!hasMore && products.length > 0 && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                <p>No more products to load</p>
+              </div>
+            )}
               </>
           )}
         </main>
-        </>
-      )}
     </div>
   );
 };

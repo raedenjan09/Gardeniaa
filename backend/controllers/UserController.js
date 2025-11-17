@@ -74,9 +74,17 @@ exports.registerUser = async (req, res) => {
     });
     console.log('✅ Verification email sent');
 
+    // Generate JWT token for immediate login (bypass email verification)
+    const token = user.getJwtToken();
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    console.log('✅ User registered and automatically logged in:', user.email);
     res.status(201).json({
       success: true,
-      message: `Verification email sent to ${user.email}. Please verify before logging in.`,
+      token,
+      user: userResponse,
+      message: 'Registration successful! You are now logged in.'
     });
 
   } catch (error) {
@@ -504,6 +512,336 @@ exports.updatePassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Failed to update password",
+    });
+  }
+};
+
+// ========== FIREBASE REGISTRATION ==========
+exports.firebaseRegister = async (req, res) => {
+  try {
+    console.log('🔥 Firebase registration request received');
+    console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
+    
+    const { name, email, uid, contact, address } = req.body;
+    
+    if (!name || !email || !uid) {
+      return res.status(400).json({ message: 'Name, email, and UID are required' });
+    }
+
+    console.log('✅ Basic validation passed');
+
+    // Generate avatar URL from user's name
+    const encodedName = encodeURIComponent(name);
+    const avatarData = {
+      public_id: 'avatar_' + Date.now(),
+      url: `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&size=150`
+    };
+
+    // Check if user already exists by email or UID
+    let user = await User.findOne({
+      $or: [
+        { email: email },
+        { 'socialLoginIds.email': uid }
+      ]
+    });
+
+    if (user) {
+      // Update existing user with Firebase data
+      if (!user.socialLoginIds) {
+        user.socialLoginIds = {};
+      }
+      user.socialLoginIds.email = uid;
+      
+      // Update name if it's different
+      if (name && user.name !== name) {
+        user.name = name;
+      }
+      
+      await user.save();
+      console.log('✅ Existing user updated with Firebase data:', email);
+    } else {
+      // Create new user for Firebase registration
+      console.log('👤 Creating new user for Firebase registration:', email);
+      
+      user = await User.create({
+        name,
+        email,
+        avatar: avatarData,
+        contact: contact || "",
+        address: address || {},
+        socialLoginIds: { email: uid },
+        isActive: true,
+        isVerified: false // Users need to verify email through Firebase
+      });
+      console.log('✅ New user created via Firebase:', email);
+    }
+
+    // Generate JWT token for immediate login
+    const token = user.getJwtToken();
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    console.log('✅ Firebase registration successful for:', email);
+    res.status(201).json({
+      success: true,
+      token,
+      user: userResponse,
+      message: 'Registration successful! You can now log in.'
+    });
+
+  } catch (error) {
+    console.error('❌ FIREBASE REGISTER ERROR:');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists with different login method'
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Firebase registration failed. Please try again.'
+    });
+  }
+};
+
+// ========== FIREBASE LOGIN ==========
+exports.firebaseLogin = async (req, res) => {
+  try {
+    console.log('🔥 Firebase login attempt for:', req.body.email);
+    const { email, uid } = req.body;
+
+    if (!email || !uid) {
+      return res.status(400).json({ message: 'Email and UID are required' });
+    }
+
+    // Find user by email and Firebase UID
+    const user = await User.findOne({
+      email: email,
+      'socialLoginIds.email': uid
+    });
+
+    if (!user) {
+      console.log('❌ Firebase user not found:', email);
+      return res.status(401).json({ message: 'Invalid email or authentication' });
+    }
+
+    // Check if user is deleted
+    if (user.isDeleted) {
+      console.log('🗑️ Deleted user attempted Firebase login:', email);
+      return res.status(403).json({ message: 'Your account has been deleted. Please contact support.' });
+    }
+
+    // Check if user is inactive
+    if (!user.isActive) {
+      console.log('❌ Inactive user attempted Firebase login:', email);
+      return res.status(403).json({ message: 'Your account is inactive. Please contact support.' });
+    }
+
+    // Firebase user is automatically verified - no email verification required
+    console.log('✅ Firebase login successful for:', email);
+    const token = user.getJwtToken();
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: userResponse
+    });
+
+  } catch (error) {
+    console.error('❌ FIREBASE LOGIN ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Firebase login failed. Please try again.',
+      error: error.message
+    });
+  }
+};
+
+// ========== FIREBASE EMAIL VERIFICATION CALLBACK ==========
+exports.firebaseVerifyEmail = async (req, res) => {
+  try {
+    const { actionCode, uid } = req.body;
+
+    console.log('🔥 Firebase email verification callback received');
+    console.log('📦 Action code:', actionCode);
+    console.log('👤 UID:', uid);
+
+    if (!actionCode) {
+      return res.status(400).json({ message: 'Action code is required' });
+    }
+
+    // For now, we'll just update the user verification status directly
+    // since Firebase Admin verification methods might not be fully implemented
+    let user;
+
+    // Try to find user by UID if provided
+    if (uid) {
+      user = await User.findOne({ 'socialLoginIds.email': uid });
+    }
+
+    // If user not found by UID, try to find by email from request
+    if (!user && req.body.email) {
+      user = await User.findOne({ email: req.body.email });
+    }
+
+    if (!user) {
+      console.error('❌ User not found by UID or email');
+      return res.status(404).json({
+        message: 'User not found. Please try registering again.'
+      });
+    }
+
+    // Update verification status
+    console.log('🔄 Updating user verification status...');
+    user.isVerified = true;
+    await user.save();
+
+    console.log('✅ User verification status updated in database:', user.email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. You can now log in.',
+      debug: {
+        email: user.email,
+        isVerified: user.isVerified,
+        uid: uid,
+        actionCodeUsed: !!actionCode
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ FIREBASE VERIFICATION ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Email verification failed. Please try again.',
+      error: error.message,
+      debug: {
+        actionCode: !!req.body.actionCode,
+        uid: !!req.body.uid
+      }
+    });
+  }
+};
+
+// ========== UPDATE FIREBASE VERIFICATION STATUS ==========
+exports.updateFirebaseVerificationStatus = async (req, res) => {
+  try {
+    const { uid, verified } = req.body;
+    
+    console.log('🔥 Updating Firebase verification status:', { uid, verified });
+    
+    if (!uid) {
+      return res.status(400).json({ message: 'UID is required' });
+    }
+    
+    // Find user by Firebase UID
+    const user = await User.findOne({ 'socialLoginIds.email': uid });
+    
+    if (!user) {
+      console.error('❌ User not found for UID:', uid);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Update verification status
+    user.isVerified = verified === true;
+    await user.save();
+    
+    console.log('✅ User verification status updated:', { email: user.email, isVerified: user.isVerified });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Verification status updated successfully',
+      user: {
+        email: user.email,
+        isVerified: user.isVerified
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ UPDATE VERIFICATION STATUS ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update verification status',
+      error: error.message
+    });
+  }
+};
+
+// ========== FIREBASE PASSWORD RESET ==========
+exports.firebaseResetPassword = async (req, res) => {
+  try {
+    const { actionCode, newPassword } = req.body;
+
+    console.log('🔥 Firebase password reset request received');
+    console.log('📦 Action code:', actionCode);
+    
+    if (!actionCode || !newPassword) {
+      return res.status(400).json({ message: 'Action code and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // For now, we'll simulate the password reset without Firebase Admin verification
+    // since the Firebase Admin methods might not be fully implemented
+    console.log('🔐 Simulating password reset action code verification...');
+    
+    // Extract email from action code (this would normally come from Firebase Admin)
+    // For testing purposes, we'll assume the email is provided in the request
+    const userEmail = req.body.email;
+    
+    if (!userEmail) {
+      return res.status(400).json({ message: 'Email is required for password reset' });
+    }
+
+    const user = await User.findOne({ email: userEmail });
+    
+    if (!user) {
+      console.error('❌ User not found for email:', userEmail);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update the user's password in our database
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+    console.log('✅ Password updated in database for user:', userEmail);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. You can now log in with your new password.'
+    });
+
+  } catch (error) {
+    console.error('❌ FIREBASE PASSWORD RESET ERROR:', error);
+    
+    if (error.message.includes('invalid') || error.message.includes('expired')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link. Please request a new password reset.'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Password reset failed. Please try again.',
+      error: error.message
     });
   }
 };

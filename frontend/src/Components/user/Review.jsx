@@ -69,15 +69,19 @@ const Review = () => {
       await apiClient[method](url, { productId, rating, comment });
 
       alert(isEdit ? "Review updated successfully!" : "Review submitted successfully!");
-
-      // Refresh reviews
-      const { data } = await apiClient.get(`/reviews/${productId}`);
-      setReviews(data.reviews || []);
-
-      setIsEdit(true);
+      
+      // Redirect to order history after successful review submission/update
+      navigate("/order-history");
     } catch (error) {
       console.error("Failed to submit review:", error);
-      alert(error.response?.data?.message || "Failed to submit review.");
+      const errorMessage = error.response?.data?.message || "Failed to submit review.";
+      
+      if (errorMessage.includes("purchased and received")) {
+        alert(errorMessage + " Please ensure you have marked your order as received in your order history.");
+        navigate("/order-history");
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }

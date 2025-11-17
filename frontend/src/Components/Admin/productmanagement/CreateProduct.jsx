@@ -15,11 +15,15 @@ import {
   IconButton,
   Card,
   CardMedia,
-  Stack
+  Stack,
+  FormHelperText
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 const BASE_URL = "http://localhost:4001/api/v1";
 
@@ -32,22 +36,61 @@ const categories = [
   "Planters & Pots",
 ];
 
+// Validation schema
+const productSchema = yup.object({
+  name: yup
+    .string()
+    .required("Product name is required")
+    .min(3, "Product name must be at least 3 characters"),
+  price: yup
+    .number()
+    .typeError("Price must be a number")
+    .required("Price is required")
+    .positive("Price must be positive")
+    .min(0.01, "Price must be at least 0.01"),
+  description: yup
+    .string()
+    .required("Description is required")
+    .min(10, "Description must be at least 10 characters"),
+  category: yup.string().required("Category is required"),
+  supplier: yup.string().optional(),
+  stock: yup
+    .number()
+    .typeError("Stock must be a number")
+    .required("Stock is required")
+    .integer("Stock must be a whole number")
+    .min(0, "Stock cannot be negative")
+    .max(1000, "Stock cannot exceed 1000")
+});
+
 export default function CreateProduct() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    description: "",
-    category: categories[0],
-    supplier: "",
-    stock: "",
-  });
   const [suppliers, setSuppliers] = useState([]);
   const [imagesFiles, setImagesFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch
+  } = useForm({
+    resolver: yupResolver(productSchema),
+    defaultValues: {
+      name: "",
+      price: "",
+      description: "",
+      category: categories[0],
+      supplier: "",
+      stock: ""
+    }
+  });
+
+  const watchedCategory = watch("category");
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -104,26 +147,19 @@ export default function CreateProduct() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!form.name || !form.price || !form.description || !form.stock) {
-      toast.error("Please fill in all required garden item details.", { position: "top-center" });
-      return;
-    }
-
+  const onSubmit = async (data) => {
     if (imagesFiles.length === 0) {
       toast.error("Please select at least one image for the item.", { position: "top-center" });
       return;
     }
 
     const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("price", parseFloat(form.price));
-    formData.append("description", form.description);
-    formData.append("category", form.category);
-    if (form.supplier) formData.append("supplier", form.supplier);
-    formData.append("stock", parseInt(form.stock, 10));
+    formData.append("name", data.name);
+    formData.append("price", parseFloat(data.price));
+    formData.append("description", data.description);
+    formData.append("category", data.category);
+    if (data.supplier) formData.append("supplier", data.supplier);
+    formData.append("stock", parseInt(data.stock, 10));
     imagesFiles.forEach((file) => formData.append("images", file));
 
     try {
@@ -147,60 +183,94 @@ export default function CreateProduct() {
         Add Garden Item
       </Typography>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
-          <TextField
-            label="Name*"
-            fullWidth
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Name*"
+                fullWidth
+                error={!!errors.name}
+                helperText={errors.name?.message}
+              />
+            )}
           />
-          <TextField
-            label="Price*"
-            type="number"
-            fullWidth
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
+          <Controller
+            name="price"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Price*"
+                type="number"
+                fullWidth
+                error={!!errors.price}
+                helperText={errors.price?.message}
+              />
+            )}
           />
-          <TextField
-            label="Description*"
-            multiline
-            rows={4}
-            fullWidth
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Description*"
+                multiline
+                rows={4}
+                fullWidth
+                error={!!errors.description}
+                helperText={errors.description?.message}
+              />
+            )}
           />
-          <FormControl fullWidth>
+          <FormControl fullWidth error={!!errors.category}>
             <InputLabel>Category*</InputLabel>
-            <Select
-              value={form.category}
-              label="Category*"
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-            >
-              {categories.map((c) => (
-                <MenuItem key={c} value={c}>{c}</MenuItem>
-              ))}
-            </Select>
+            <Controller
+              name="category"
+              control={control}
+              render={({ field }) => (
+                <Select {...field} label="Category*">
+                  {categories.map((c) => (
+                    <MenuItem key={c} value={c}>{c}</MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+            {errors.category && <FormHelperText>{errors.category.message}</FormHelperText>}
           </FormControl>
-          <FormControl fullWidth>
+          <FormControl fullWidth error={!!errors.supplier}>
             <InputLabel>Supplier</InputLabel>
-            <Select
-              value={form.supplier}
-              label="Supplier"
-              onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-            >
-              <MenuItem value="">-- None --</MenuItem>
-              {suppliers.map((s) => (
-                <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
-              ))}
-            </Select>
+            <Controller
+              name="supplier"
+              control={control}
+              render={({ field }) => (
+                <Select {...field} label="Supplier">
+                  <MenuItem value="">-- None --</MenuItem>
+                  {suppliers.map((s) => (
+                    <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+            {errors.supplier && <FormHelperText>{errors.supplier.message}</FormHelperText>}
           </FormControl>
-          <TextField
-            label="Stock*"
-            type="number"
-            fullWidth
-            value={form.stock}
-            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          <Controller
+            name="stock"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Stock*"
+                type="number"
+                fullWidth
+                error={!!errors.stock}
+                helperText={errors.stock?.message}
+              />
+            )}
           />
 
           <Button variant="contained" component="label">

@@ -27,3 +27,12 @@ exports.isAdmin = async (req, res, next) => {
         res.status(403).json({ message: 'Access denied. Admin rights required.' });
     }
 };
+
+// User middleware - only regular users can access
+exports.isUser = async (req, res, next) => {
+    if (req.user && req.user.role === 'user') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied. User access only.' });
+    }
+};

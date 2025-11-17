@@ -5,6 +5,7 @@ import Footer from "./Components/layouts/user/Footer";
 import FallingLeaves from "./Components/layouts/FallingLeaves";
 import Login from "./Components/user/Login";
 import Register from "./Components/user/Register";
+import VerifyEmail from "./Components/user/VerifyEmail";
 import Profile from "./Components/user/Profile";
 import UpdateProfile from "./Components/user/UpdateProfile";
 import ForgotPassword from "./Components/user/ForgotPassword";
@@ -44,7 +45,7 @@ import ViewOrder from "./Components/Admin/ordermanagement/ViewOrder";
 import ReviewList from "./Components/Admin/reviewmanagement/ReviewList";
 import AdminProfile from "./Components/Admin/AdminProfile";
 
-// Layout component that includes the header (for user routes)
+// Layout component that includes the header and footer (for user routes)
 const Layout = ({ children }) => {
   return (
     <div className="app-layout">
@@ -53,6 +54,7 @@ const Layout = ({ children }) => {
       <main className="main-content">
         {children}
       </main>
+      <Footer />
     </div>
   );
 };
@@ -62,10 +64,8 @@ const App = () => {
   const user = getUser();
 
   const getDefaultRoute = React.useCallback(() => {
-    if (!token) return "/login";
-    if (user && user.role === "admin") return "/admin/dashboard";
-    return "/home";
-  }, [token, user]);
+    return "/home"; // Home page is now public
+  }, []);
 
   return (
     <Router>
@@ -73,16 +73,19 @@ const App = () => {
         {/* Default Route */}
         <Route path="/" element={<Navigate to={getDefaultRoute()} />} />
 
-        {/* Public Routes (without header) */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        {/* Public Routes (with header) */}
+        <Route path="/login" element={<Layout><Login /></Layout>} />
+        <Route path="/register" element={<Layout><Register /></Layout>} />
+        <Route path="/verify-email/:token" element={<Layout><VerifyEmail /></Layout>} />
+        <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+        <Route path="/reset-password/:token" element={<Layout><ResetPassword /></Layout>} />
+        <Route path="/firebase-reset-password" element={<Layout><ResetPassword /></Layout>} />
 
         {/* User Protected Routes (with header) */}
-        <Route path="/home" element={token ? <Layout><Home /></Layout> : <Navigate to="/login" />} />
-        <Route path="/products" element={token ? <Layout><Home /></Layout> : <Navigate to="/login" />} />
-        <Route path="/product/:productId" element={token ? <Layout><ProductDetail /></Layout> : <Navigate to="/login" />} />
+        {/* Public routes - accessible to all users */}
+        <Route path="/home" element={<Layout><Home /></Layout>} />
+        <Route path="/products" element={<Layout><Home /></Layout>} />
+        <Route path="/product/:productId" element={<Layout><ProductDetail /></Layout>} />
         <Route path="/checkout/solo/:productId" element={token ? <Layout><CheckoutConfirmation /></Layout> : <Navigate to="/login" />} />
         <Route path="/profile" element={token ? <Layout><Profile /></Layout> : <Navigate to="/login" />} />
         <Route path="/update-profile" element={token ? <Layout><UpdateProfile /></Layout> : <Navigate to="/login" />} />

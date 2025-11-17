@@ -97,12 +97,7 @@ const OrderHistory = () => {
   }, [token, navigate, user._id]);
 
   const handleReview = (productId) => {
-    const myReview = productReviews[productId];
-    if (myReview) {
-      navigate(`/review/edit/${productId}`);
-    } else {
-      navigate(`/review/${productId}`);
-    }
+    navigate(`/review/${productId}`);
   };
 
   const handleMarkAsDelivered = async (orderId) => {
@@ -155,9 +150,9 @@ const OrderHistory = () => {
                     Order Status: <strong style={{ color: order.orderStatus === 'Delivered' ? 'green' : 'orange' }}>{order.orderStatus}</strong>
                   </Typography>
                 </Box>
-                {order.orderStatus !== "Delivered" && order.orderStatus !== "Cancelled" && (
-                  <Button 
-                    variant="contained" 
+                {order.orderStatus === "Out for Delivery" && (
+                  <Button
+                    variant="contained"
                     color="success"
                     onClick={() => handleMarkAsDelivered(order._id)}
                     disabled={markingDelivered[order._id]}
@@ -273,7 +268,7 @@ const OrderHistory = () => {
                                     sx={{ mt: 1 }}
                                     onClick={() => handleReview(item.product)}
                                   >
-                                    Review Product
+                                    Write Review
                                   </Button>
                                 )
                               ) : (

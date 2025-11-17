@@ -20,6 +20,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const token = localStorage.getItem("token");
 
@@ -52,6 +53,7 @@ const ProductDetail = () => {
       alert("Please log in to add products to your cart.");
       return;
     }
+    setAddingToCart(true);
     try {
       await axios.post(
         "http://localhost:4001/api/v1/cart/add",
@@ -59,10 +61,15 @@ const ProductDetail = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Product added to cart!");
-      navigate("/cart");
+      // Trigger cart update event for header
+      window.dispatchEvent(new Event('cartUpdated'));
+      // Refresh the page to update the cart count
+      window.location.reload();
     } catch (error) {
       console.error("Failed to add product to cart", error);
       alert(error.response?.data?.message || "Failed to add product to cart.");
+    } finally {
+      setAddingToCart(false);
     }
   };
 
@@ -257,29 +264,19 @@ const ProductDetail = () => {
               </Stack>
             )}
 
-            {token && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="small"
-                sx={{ mt: 2 }}
-                onClick={() => navigate(`/review/${productId}`)}
-              >
-                Write a Review
-              </Button>
-            )}
+            {/* Review functionality is only available in Order History for delivered orders */}
           </Box>
 
           <Box display="flex" gap={2} mb={3}>
             <Button
               variant="contained"
               color="primary"
-              startIcon={<ShoppingCartIcon />}
+              startIcon={addingToCart ? <CircularProgress size={16} /> : <ShoppingCartIcon />}
               onClick={handleAddToCart}
-              disabled={product.stock <= 0}
+              disabled={product.stock <= 0 || addingToCart}
               fullWidth
             >
-              Add to Cart
+              {addingToCart ? 'Adding to Cart...' : 'Add to Cart'}
             </Button>
           </Box>
         </Box>
