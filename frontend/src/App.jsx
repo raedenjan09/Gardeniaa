@@ -18,6 +18,7 @@ import CheckoutConfirmation from "./Components/user/CheckoutConfirmation";
 import ProductDetail from "./Components/user/ProductDetail";
 import AdminDashboard from "./Components/Admin/AdminDashboard";
 import AdminRoutes from "./Components/Admin/AdminRoutes";
+import Notification from "./Components/utils/Notification";
 import { getUser } from "./Components/utils/helper";
 
 // Product Management
@@ -55,6 +56,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <Footer />
+      <Notification />
     </div>
   );
 };

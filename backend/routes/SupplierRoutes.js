@@ -3,6 +3,7 @@ const {
   createSupplier,
   getAllSuppliers,
   getSupplier,
+  getAdminSupplier,
   updateSupplier,
   softDeleteSupplier,
   getDeletedSuppliers,
@@ -20,7 +21,7 @@ router.get('/suppliers/:id', getSupplier);
 
 // ✅ Admin routes
 router.get('/admin/suppliers/trash', isAuthenticatedUser, isAdmin, getDeletedSuppliers);
-router.get('/admin/suppliers/:id', isAuthenticatedUser, isAdmin, getSupplier);
+router.get('/admin/suppliers/:id', isAuthenticatedUser, isAdmin, getAdminSupplier);
 router.patch('/admin/suppliers/restore/:id', isAuthenticatedUser, isAdmin, restoreSupplier);
 router.post('/admin/suppliers', isAuthenticatedUser, isAdmin, createSupplier);
 router.put('/admin/suppliers/:id', isAuthenticatedUser, isAdmin, updateSupplier);

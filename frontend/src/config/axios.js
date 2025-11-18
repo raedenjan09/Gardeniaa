@@ -29,12 +29,37 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const { status, data } = error.response || {};
+    
+    if (status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (status === 403) {
+      // Handle inactive/deleted accounts
+      const message = data?.message || 'Access denied';
+      
+      if (message.includes('inactive') || message.includes('deleted')) {
+        // Clear user data and show notification
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Create a custom event to show account status notification
+        const accountStatusEvent = new CustomEvent('showAccountStatus', {
+          detail: { message, type: 'error' }
+        });
+        window.dispatchEvent(accountStatusEvent);
+        
+        // Redirect to login after a short delay to allow notification to show
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        
+        return Promise.reject(new Error(message));
+      }
     }
+    
     return Promise.reject(error);
   }
 );

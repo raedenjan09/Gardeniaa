@@ -196,9 +196,9 @@ const SalesCharts = () => {
                   height={100}
                   interval={0}
                 />
-                <YAxis label={{ value: "Sales ($)", angle: -90, position: "insideLeft" }} />
+                <YAxis label={{ value: "Sales (₱)", angle: -90, position: "insideLeft" }} />
                 <Tooltip
-                  formatter={(value) => `$${value.toFixed(2)}`}
+                  formatter={(value) => `₱${value.toFixed(2)}`}
                   labelFormatter={(label) => `Month: ${label}`}
                 />
                 <Legend />
@@ -222,9 +222,9 @@ const SalesCharts = () => {
                   height={100}
                   interval={0}
                 />
-                <YAxis label={{ value: "Sales ($)", angle: -90, position: "insideLeft" }} />
+                <YAxis label={{ value: "Sales (₱)", angle: -90, position: "insideLeft" }} />
                 <Tooltip
-                  formatter={(value) => `$${value.toFixed(2)}`}
+                  formatter={(value) => `₱${value.toFixed(2)}`}
                   labelFormatter={(label) => `Month: ${label}`}
                 />
                 <Legend />
@@ -299,9 +299,9 @@ const SalesCharts = () => {
                   textAnchor="end"
                   height={80}
                 />
-                <YAxis label={{ value: "Sales ($)", angle: -90, position: "insideLeft" }} />
+                <YAxis label={{ value: "Sales (₱)", angle: -90, position: "insideLeft" }} />
                 <Tooltip
-                  formatter={(value) => `$${value.toFixed(2)}`}
+                  formatter={(value) => `₱${value.toFixed(2)}`}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
                 <Legend />
@@ -324,9 +324,9 @@ const SalesCharts = () => {
                   textAnchor="end"
                   height={80}
                 />
-                <YAxis label={{ value: "Sales ($)", angle: -90, position: "insideLeft" }} />
+                <YAxis label={{ value: "Sales (₱)", angle: -90, position: "insideLeft" }} />
                 <Tooltip
-                  formatter={(value) => `$${value.toFixed(2)}`}
+                  formatter={(value) => `₱${value.toFixed(2)}`}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
                 <Legend />

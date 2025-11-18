@@ -162,7 +162,7 @@ const OrderHistory = () => {
                 )}
               </Box>
 
-              <Typography>Total Price: ${order.totalPrice.toFixed(2)}</Typography>
+              <Typography>Total Price:  ₱{order.totalPrice.toFixed(2)}</Typography>
               <Typography>
                 Placed on:{" "}
                 {new Date(order.createdAt).toLocaleDateString()}{" "}
@@ -226,7 +226,7 @@ const OrderHistory = () => {
                                 {item.name} (x{item.quantity})
                               </Typography>
                               <Typography>
-                                ${(item.price * item.quantity).toFixed(2)}
+                                ₱{(item.price * item.quantity).toFixed(2)}
                               </Typography>
                             </Box>
 

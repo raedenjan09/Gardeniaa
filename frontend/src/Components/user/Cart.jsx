@@ -121,7 +121,7 @@ const Cart = () => {
             />
             <CardContent sx={{ flex: 1 }}>
               <Typography variant="h6">{item.product.name}</Typography>
-              <Typography>Price: ${item.product.price}</Typography>
+              <Typography>Price:  ₱{item.product.price}</Typography>
               <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                 <IconButton
                   onClick={() => handleQuantityChange(item.product._id, "decrease")}
@@ -151,7 +151,7 @@ const Cart = () => {
       </Stack>
 
       <Box mt={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5">Total: ${total}</Typography>
+        <Typography variant="h5">Total: ₱{total}</Typography>
         <Stack direction="row" spacing={2}>
           <Button variant="contained" color="error" onClick={handleRemoveAll}>
             Remove All

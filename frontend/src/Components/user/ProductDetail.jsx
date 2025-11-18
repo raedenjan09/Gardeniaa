@@ -206,7 +206,7 @@ const ProductDetail = () => {
           </Box>
 
           <Typography variant="h5" color="success.main" mb={2}>
-            ${product.price}
+            ₱{product.price}
           </Typography>
 
           <Typography variant="body1" mb={2} color="textSecondary">

@@ -64,7 +64,7 @@ export default function ViewProduct() {
       </Button>
       <h2>{product.name}</h2>
       <p><strong>Category:</strong> {product.category}</p>
-      <p><strong>Price:</strong> ${product.price}</p>
+      <p><strong>Price:</strong> ₱{product.price}</p>
       <p><strong>Stock:</strong> {product.stock}</p>
       <p><strong>Supplier:</strong> {product.supplier?.name || '—'}</p>
       <p><strong>Description:</strong> {product.description || 'No description provided.'}</p>

@@ -150,7 +150,36 @@ export default function SupplierList() {
     { name: "email", label: "Email" },
     { name: "phone", label: "Phone" },
     { name: "address.city", label: "City", options: { customBodyRenderLite: (dataIndex) => displayedSuppliers[dataIndex].address?.city || '—' } },
-    { name: "isActive", label: "Status", options: { customBodyRenderLite: (dataIndex) => displayedSuppliers[dataIndex].isActive ? 'Active' : 'Inactive' } }
+    { name: "isActive", label: "Status", options: { customBodyRenderLite: (dataIndex) => displayedSuppliers[dataIndex].isActive ? 'Active' : 'Inactive' } },
+    {
+      name: "actions",
+      label: "Actions",
+      options: {
+        customBodyRenderLite: (dataIndex) => {
+          const supplier = displayedSuppliers[dataIndex];
+          return (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate(`/admin/suppliers/view/${supplier._id}`)}
+              >
+                View
+              </Button>
+              {supplier.isActive && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => navigate(`/admin/suppliers/edit/${supplier._id}`)}
+                >
+                  Edit
+                </Button>
+              )}
+            </div>
+          );
+        }
+      }
+    }
   ];
 
   const options = {

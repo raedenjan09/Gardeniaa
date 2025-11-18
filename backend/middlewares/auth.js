@@ -12,7 +12,23 @@ exports.isAuthenticatedUser = async (req, res, next) => {
     
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id);
+        const user = await User.findById(decoded.id);
+        
+        if (!user) {
+            return res.status(401).json({ message: 'User not found. Please log in again.' });
+        }
+
+        // Check if user is deleted
+        if (user.isDeleted) {
+            return res.status(403).json({ message: 'Your account has been deleted. Please contact support.' });
+        }
+
+        // Check if user is inactive
+        if (!user.isActive) {
+            return res.status(403).json({ message: 'Your account is inactive. Please contact support.' });
+        }
+
+        req.user = user;
         next();
     } catch (error) {
         return res.status(401).json({ message: 'Invalid token' });

@@ -29,23 +29,58 @@ const AdminDashboard = () => {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const [productsRes, suppliersRes, usersRes, ordersRes, reviewsRes] =
-        await Promise.all([
+      const [productsRes, suppliersRes, usersRes, ordersRes, reviewsRes, productStatsRes] =
+        await Promise.allSettled([
           axios.get(`${API_BASE}/products`, config),
           axios.get(`${API_BASE}/suppliers`, config),
           axios.get(`${API_BASE}/users`, config),
           axios.get(`${API_BASE}/admin/orders`, config),
           axios.get(`${API_BASE}/admin/reviews`, config), // fetch reviews
+          axios.get(`${API_BASE}/admin/products/stats`, config), // fetch product stats
         ]);
 
-      const products = productsRes.data.products || productsRes.data || [];
-      const suppliers = suppliersRes.data.suppliers || suppliersRes.data || [];
-      const users = usersRes.data.users || [];
-      const orders = ordersRes.data.orders || [];
-      const reviews = reviewsRes.data.reviews || [];
+      // Handle each response individually to prevent one failure from breaking all stats
+      const products = productsRes.status === 'fulfilled'
+        ? (productsRes.value.data.products || productsRes.value.data || [])
+        : [];
+      
+      const suppliers = suppliersRes.status === 'fulfilled'
+        ? (suppliersRes.value.data.suppliers || suppliersRes.value.data || [])
+        : [];
+      
+      const users = usersRes.status === 'fulfilled'
+        ? (usersRes.value.data.users || [])
+        : [];
+      
+      const orders = ordersRes.status === 'fulfilled'
+        ? (ordersRes.value.data.orders || [])
+        : [];
+      
+      const reviews = reviewsRes.status === 'fulfilled'
+        ? (reviewsRes.value.data.reviews || [])
+        : [];
+      
+      const productStats = productStatsRes.status === 'fulfilled'
+        ? (productStatsRes.value.data.stats || {})
+        : {};
+
+      // Log any failed requests for debugging
+      const failedRequests = [
+        { name: 'products', res: productsRes },
+        { name: 'suppliers', res: suppliersRes },
+        { name: 'users', res: usersRes },
+        { name: 'orders', res: ordersRes },
+        { name: 'reviews', res: reviewsRes },
+        { name: 'productStats', res: productStatsRes }
+      ].filter(item => item.res.status === 'rejected');
+
+      if (failedRequests.length > 0) {
+        console.warn('Some dashboard stats failed to load:', failedRequests.map(f => f.name));
+        setError(``);
+      }
 
       setStats({
-        products: products.length,
+        products: products.total || products.length,
         suppliers: suppliers.length,
         users: users.length,
         orders: orders.length,

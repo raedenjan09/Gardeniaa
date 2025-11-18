@@ -493,7 +493,7 @@ const Home = () => {
                         <h3 style={{ fontSize: "1.1rem", marginBottom: 5 }}>
                           {product.name}
                         </h3>
-                        <p style={{ marginBottom: 5 }}>Price: ${product.price}</p>
+                        <p style={{ marginBottom: 5 }}>Price: ₱{product.price}</p>
                         <p style={{ marginBottom: 10, color: "#555" }}>
                           Stock: {product.stock}
                         </p>

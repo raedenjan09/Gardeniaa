@@ -81,6 +81,38 @@ exports.getSupplier = async (req, res, next) => {
     }
 };
 
+// Get single supplier details for admin (includes deleted suppliers)   =>  /api/v1/admin/suppliers/:id
+exports.getAdminSupplier = async (req, res, next) => {
+    try {
+        const supplier = await Supplier.findById(req.params.id);
+
+        if (!supplier) {
+            return res.status(404).json({
+                success: false,
+                message: 'Supplier not found'
+            });
+        }
+
+        // Get products associated with this supplier (including from deleted suppliers)
+        const products = await Product.find({
+            supplier: req.params.id
+        }).select('name price category stock');
+
+        res.status(200).json({
+            success: true,
+            supplier: {
+                ...supplier.toObject(),
+                products
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 // Update supplier   =>  /api/v1/admin/suppliers/:id
 exports.updateSupplier = async (req, res, next) => {
     try {

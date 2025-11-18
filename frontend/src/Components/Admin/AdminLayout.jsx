@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUser } from '../utils/helper';
 import AdminSidebar from './AdminSidebar';
+import AdminFallingLeaves from './AdminFallingLeaves';
 import './AdminLayout.css';
 
 const AdminLayout = ({ children }) => {
@@ -26,6 +27,7 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="admin-layout">
+      <AdminFallingLeaves />
       <AdminSidebar user={user} />
       <main className="admin-main-content">
         <div className="admin-content-wrapper">

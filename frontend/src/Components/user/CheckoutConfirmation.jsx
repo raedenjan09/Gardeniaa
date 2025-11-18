@@ -145,8 +145,8 @@ const CheckoutConfirmation = () => {
             <CardContent sx={{ flex: 1 }}>
               <Typography variant="h6">{item.product.name}</Typography>
               <Typography>Quantity: {item.quantity}</Typography>
-              <Typography>Price: ${item.product.price}</Typography>
-              <Typography>Subtotal: ${(item.product.price * item.quantity).toFixed(2)}</Typography>
+              <Typography>Price: ₱{item.product.price}</Typography>
+              <Typography>Subtotal: ₱{(item.product.price * item.quantity).toFixed(2)}</Typography>
             </CardContent>
           </Card>
         ))}
@@ -155,10 +155,10 @@ const CheckoutConfirmation = () => {
       {/* Order Summary */}
       <Box mt={3} p={2} border="1px solid #ccc" borderRadius={2}>
         <Typography variant="h6">Order Summary</Typography>
-        <Typography>Items Price: ${itemsPrice.toFixed(2)}</Typography>
-        <Typography>Tax: ${taxPrice.toFixed(2)}</Typography>
-        <Typography>Shipping: ${SHIPPING_PRICE.toFixed(2)}</Typography>
-        <Typography variant="h5" mt={1}>Total: ${totalPrice.toFixed(2)}</Typography>
+        <Typography>Items Price: ₱{itemsPrice.toFixed(2)}</Typography>
+        <Typography>Tax: ₱{taxPrice.toFixed(2)}</Typography>
+        <Typography>Shipping: ₱{SHIPPING_PRICE.toFixed(2)}</Typography>
+        <Typography variant="h5" mt={1}>Total: ₱{totalPrice.toFixed(2)}</Typography>
       </Box>
 
       <Box mt={3} display="flex" justifyContent="flex-end">

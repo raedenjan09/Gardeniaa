@@ -414,3 +414,48 @@ exports.searchProducts = async (req, res, next) => {
     });
   }
 };
+
+// Get product statistics for admin dashboard => /api/v1/admin/products/stats
+exports.getProductStats = async (req, res, next) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    const activeProducts = await Product.countDocuments({ isActive: true });
+    const inactiveProducts = await Product.countDocuments({ isActive: false });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        total: totalProducts,
+        active: activeProducts,
+        inactive: inactiveProducts
+      }
+    });
+  } catch (error) {
+    console.error('❌ GET PRODUCT STATS ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get all products for admin (without pagination) => /api/v1/admin/products/all
+exports.getAllAdminProducts = async (req, res, next) => {
+    try {
+        const products = await Product.find({ isActive: true })
+            .populate('supplier', 'name email')
+            .populate('reviews.user', 'name')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: products.length,
+            products
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

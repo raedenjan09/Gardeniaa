@@ -150,7 +150,7 @@ export default function ViewOrder() {
                     {item.name}
                   </Typography>
                   <Typography variant="body2">Quantity: {item.quantity}</Typography>
-                  <Typography variant="body2">Price: ${item.price.toFixed(2)}</Typography>
+                  <Typography variant="body2">Price: ₱{item.price.toFixed(2)}</Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -161,10 +161,10 @@ export default function ViewOrder() {
 
         {/* Pricing Summary */}
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <Typography><strong>Items Total:</strong> ${order.itemsPrice.toFixed(2)}</Typography>
-          <Typography><strong>Tax:</strong> ${order.taxPrice.toFixed(2)}</Typography>
-          <Typography><strong>Shipping Fee:</strong> ${order.shippingPrice.toFixed(2)}</Typography>
-          <Typography variant="h6" mt={1}><strong>Total Price:</strong> ${order.totalPrice.toFixed(2)}</Typography>
+          <Typography><strong>Items Total:</strong> ₱{order.itemsPrice.toFixed(2)}</Typography>
+         <Typography><strong>Tax:</strong> ₱{order.taxPrice.toFixed(2)}</Typography>
+         <Typography><strong>Shipping Fee:</strong> ₱{order.shippingPrice.toFixed(2)}</Typography>
+         <Typography variant="h6" mt={1}><strong>Total Price:</strong> ₱{order.totalPrice.toFixed(2)}</Typography>
         </Box>
       </Box>
     </Box>

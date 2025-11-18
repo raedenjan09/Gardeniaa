@@ -93,7 +93,7 @@ export default function OrderList() {
         order._id,
         order.user?.name || "N/A",
         products,
-        `$${order.totalPrice?.toFixed(2) || "0.00"}`,
+        `₱${order.totalPrice?.toFixed(2) || "0.00"}`,
         order.orderStatus,
       ]);
     });
@@ -129,7 +129,7 @@ export default function OrderList() {
       label: "Total Price",
       options: {
         customBodyRenderLite: (dataIndex) =>
-          `$${displayedOrders[dataIndex].totalPrice?.toFixed(2) || "0.00"}`,
+          `₱${displayedOrders[dataIndex].totalPrice?.toFixed(2) || "0.00"}`,
       },
     },
     {

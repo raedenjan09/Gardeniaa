@@ -10,7 +10,9 @@ const {
   getActiveSuppliers,
   getDeletedProducts,
   restoreProduct,
-  searchProducts
+  searchProducts,
+  getProductStats,
+  getAllAdminProducts
 } = require('../controllers/ProductController');
 
 const { isAuthenticatedUser, isAdmin } = require('../middlewares/auth');
@@ -24,9 +26,11 @@ router.get('/products/:id', getProduct);
 router.get('/suppliers/dropdown', getActiveSuppliers);
 
 // Admin routes
+router.get('/admin/products/all', isAuthenticatedUser, isAdmin, getAllAdminProducts);
 router.get('/admin/products/trash', isAuthenticatedUser, isAdmin, getDeletedProducts);
 router.patch('/admin/products/restore/:id', isAuthenticatedUser, isAdmin, restoreProduct);
 router.get('/admin/products/:id', isAuthenticatedUser, isAdmin, getProduct);
+router.get('/admin/products/stats', isAuthenticatedUser, isAdmin, getProductStats);
 
 // Use upload.array('images') for create and update (max 5)
 router.post('/admin/products', isAuthenticatedUser, isAdmin, upload.array('images', 5), createProduct);

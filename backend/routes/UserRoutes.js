@@ -38,7 +38,7 @@ router.put('/password/update', isAuthenticatedUser, isUser, updatePassword);
 router.post('/auth/firebase-reset-password', firebaseResetPassword);
 
 // PROFILE
-router.get('/me', isAuthenticatedUser, isUser, getUserProfile);
-router.put('/me/update', isAuthenticatedUser, isUser, upload.single('avatar'), updateProfile);
+router.get('/me', isAuthenticatedUser, getUserProfile);
+router.put('/me/update', isAuthenticatedUser, upload.single('avatar'), updateProfile);
 
 module.exports = router;

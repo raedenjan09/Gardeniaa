@@ -47,7 +47,9 @@ export default function ProductList() {
   const fetchActiveProducts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BASE_URL}/products`);
+      const res = await axios.get(`${BASE_URL}/admin/products/all`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       setProducts(res.data.products || []);
 
       const initialIndexes = {};
